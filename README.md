@@ -72,4 +72,16 @@ src/
 
 ## License
 
-[MIT](LICENSE). The build copies the license to `dist/LICENSE`; include it when distributing the app. Third-party dependencies are subject to their own licenses.
+[MIT](LICENSE). The build copies the license to `dist/LICENSE`; include it when distributing the app. Third-party components are listed in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+
+## Credits & Disclaimer
+
+This project is a fork of DeepSeek's official open-source project [deepseek-ai/chat-demo](https://github.com/deepseek-ai/chat-demo) (MIT License); all original work belongs to its authors. All modifications made on top of the original project (mobile gestures and corner-radius adaptation, font scale/weight settings, custom API endpoint, native sound effects, etc.) were made by [mist-rill](https://github.com/mist-rill) and are likewise released under the MIT license.
+
+The three branches of this modified version:
+
+- `main`: the standard build
+- `custom-api`: custom API endpoint build (OpenAI-compatible protocol)
+- `cute`: native sound-effect build
+
+This is a personal project for learning purposes and is not affiliated with or endorsed by DeepSeek. "DeepSeek" and its trademarks belong to their respective owners.
