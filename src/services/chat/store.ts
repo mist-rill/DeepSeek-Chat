@@ -998,7 +998,8 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
         const events = streamMessage(
           useSettings.getState().apiKey ?? '',
           {
-            model: initial.model ?? MODEL,
+            // 设置里填了自定义模型名就优先用它（兼容任意第三方模型），否则用会话选择的内置模型
+            model: useSettings.getState().apiModel?.trim() || initial.model || MODEL,
             system: getActiveSystemPrompt(),
             messages,
             thinking: { type: initial.thinking ? 'enabled' : 'disabled' },

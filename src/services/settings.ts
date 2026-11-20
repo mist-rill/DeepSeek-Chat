@@ -13,9 +13,13 @@ export type FontScale = 'system' | number
 /** 正文字重偏好：在标准字重 400 上加减的粗细档位，400–600，步进 50 */
 export type FontWeight = number
 
-/** 本机设置，存 localStorage：API Key、语言、主题、位置、朗读音色、字号、字重、深度思考与智能搜索开关、侧边栏收起状态 */
+/** 本机设置，存 localStorage：API Key、自定义接口地址与模型名、语言、主题、位置、朗读音色、字号、字重、深度思考与智能搜索开关、侧边栏收起状态 */
 type Settings = {
   apiKey: string | null
+  /** 自定义 Anthropic 兼容接口根地址（如 https://api.deepseek.com/anthropic），空用官方 */
+  apiBaseUrl: string | null
+  /** 自定义模型名，空用界面选择的模型 */
+  apiModel: string | null
   locale: Locale
   themePreference: ThemePreference
   location: UserLocation | null
@@ -29,6 +33,8 @@ type Settings = {
 
 const KEYS = {
   apiKey: 'chat-demo:api-key',
+  apiBaseUrl: 'chat-demo:api-base-url',
+  apiModel: 'chat-demo:api-model',
   locale: 'chat-demo:locale',
   location: 'chat-demo:location',
   themePreference: 'chat-demo:theme-preference',
@@ -110,8 +116,16 @@ const initialFontWeight = (): FontWeight => {
   return Number.isFinite(value) ? Math.min(600, Math.max(400, value)) : 400
 }
 
+/** 空串存 null，输入框留空即回到官方接口 / 默认模型 */
+const initialOptional = (key: string): string | null => {
+  const value = read(key)?.trim()
+  return value ? value : null
+}
+
 export const useSettings = create<Settings>(() => ({
   apiKey: read(KEYS.apiKey),
+  apiBaseUrl: initialOptional(KEYS.apiBaseUrl),
+  apiModel: initialOptional(KEYS.apiModel),
   locale: initialLocale(),
   location: initialLocation(),
   themePreference: initialThemePreference(),
@@ -157,6 +171,18 @@ export const setFontWeight = (fontWeight: FontWeight) => {
 export const setApiKey = (apiKey: string | null) => {
   write(KEYS.apiKey, apiKey)
   useSettings.setState({ apiKey })
+}
+
+export const setApiBaseUrl = (value: string) => {
+  const apiBaseUrl = value.trim() || null
+  write(KEYS.apiBaseUrl, apiBaseUrl)
+  useSettings.setState({ apiBaseUrl })
+}
+
+export const setApiModel = (value: string) => {
+  const apiModel = value.trim() || null
+  write(KEYS.apiModel, apiModel)
+  useSettings.setState({ apiModel })
 }
 
 export const setThinking = (thinking: boolean) => {

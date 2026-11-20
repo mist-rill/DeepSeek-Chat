@@ -1,4 +1,5 @@
 import { translate, type TranslationMessage } from '../../i18n/index.js'
+import { useSettings } from '../settings.js'
 import { readMessageEvent } from './parseEvent.js'
 import { readServerSentEvents } from './sse.js'
 import type {
@@ -11,8 +12,16 @@ import type {
 
 /** 构建期 API 地址，默认 https://api.deepseek.com；本地开发支持开发服务器代理 */
 export const API_ORIGIN = __API_ORIGIN__
-/** Anthropic 兼容接口的前缀 */
-const ANTHROPIC_BASE_URL = `${API_ORIGIN}/anthropic/v1`
+
+/**
+ * Anthropic 兼容接口的根地址：设置里填了自定义 Base URL 就用它
+ * （用户填的是到 /anthropic 为止的根，比如 https://api.deepseek.com/anthropic），
+ * 没填走官方。消息、文件、模型列表都在这个根下的 /v1 上。
+ */
+const anthropicBase = (): string => {
+  const custom = useSettings.getState().apiBaseUrl?.trim()
+  return custom ? custom.replace(/\/+$/, '') : `${API_ORIGIN}/anthropic`
+}
 /** 引用 Files API 上传的图片、调用 Anthropic 兼容 Files API 时必须携带 */
 const FILES_BETA = 'files-api-2025-04-14'
 
@@ -83,17 +92,18 @@ export const request = async (url: string, init: RequestInit): Promise<Response>
 }
 
 const anthropicHeaders = (apiKey: string, beta: boolean): Record<string, string> => ({
-  // DeepSeek 兼容接口的鉴权方式，也可使用 Authorization: Bearer。
+  // Anthropic 原生用 x-api-key；OpenAI 风格网关只认 Authorization: Bearer，两个都带上兼容两边
   'x-api-key': apiKey,
+  Authorization: `Bearer ${apiKey}`,
   // Files API 和通过 file_id 引用图片时必传；纯文本聊天无需携带。
   ...(beta ? { 'anthropic-beta': FILES_BETA } : {}),
 })
 
-/** 用 GET /models 校验 API Key（不产生费用） */
+/** 用 GET /v1/models 校验 API Key 与接口连通性（不产生费用） */
 export const verifyApiKey = async (apiKey: string, signal?: AbortSignal): Promise<void> => {
-  await request(`${API_ORIGIN}/models`, {
+  await request(`${anthropicBase()}/v1/models`, {
     method: 'GET',
-    headers: { Authorization: `Bearer ${apiKey}` },
+    headers: anthropicHeaders(apiKey, false),
     signal,
   })
 }
@@ -113,7 +123,7 @@ export const uploadFile = async (
     form.append('purpose', purpose)
   }
   form.append('file', file)
-  const response = await request(`${ANTHROPIC_BASE_URL}/files`, {
+  const response = await request(`${anthropicBase()}/v1/files`, {
     method: 'POST',
     headers: anthropicHeaders(apiKey, true),
     body: form,
@@ -124,7 +134,7 @@ export const uploadFile = async (
 
 /** DELETE /anthropic/v1/files/{file_id} */
 export const deleteFile = async (apiKey: string, fileId: string): Promise<void> => {
-  await request(`${ANTHROPIC_BASE_URL}/files/${encodeURIComponent(fileId)}`, {
+  await request(`${anthropicBase()}/v1/files/${encodeURIComponent(fileId)}`, {
     method: 'DELETE',
     headers: anthropicHeaders(apiKey, true),
   })
@@ -138,6 +148,32 @@ const hasFile = (body: CreateMessageRequest) =>
   )
 
 /**
+ * 自定义接口 / 模型的常见坑翻成人话：识图不支持、思考模式不支持、Key 不对、路径不对。
+ * 服务端的原始报错放在 detail 里保留线索，没有原始报错就不带 params。
+ */
+const friendlyError = (error: unknown, images: boolean): unknown => {
+  if (!(error instanceof ApiError) || error.localMessage) {
+    return error
+  }
+  const detail = error.message
+  const params = detail ? { detail } : undefined
+  const hit = (pattern: RegExp) => pattern.test(detail)
+  if (images && error.status === 400 && hit(/image|图片|vision|visual|multimodal|多模态|视觉|模态/i)) {
+    return new ApiError(error.kind, { key: 'apiErrorImageUnsupported', params }, error.status)
+  }
+  if (error.status === 400 && hit(/thinking|reasoning|思考|推理/i)) {
+    return new ApiError(error.kind, { key: 'apiErrorThinkingUnsupported', params }, error.status)
+  }
+  if (error.status === 401 || error.status === 403) {
+    return new ApiError(error.kind, { key: 'apiErrorAuth', params }, error.status)
+  }
+  if (error.status === 404) {
+    return new ApiError(error.kind, { key: 'apiErrorNotFound', params }, error.status)
+  }
+  return error
+}
+
+/**
  * POST /anthropic/v1/messages（stream: true），逐个产出流式事件，收到 message_stop 时结束。
  * ping、保活注释与无法解析的内容不产出；中止请求时抛出 signal 的 AbortError。
  */
@@ -146,16 +182,22 @@ export async function* streamMessage(
   body: CreateMessageRequest,
   signal: AbortSignal
 ): AsyncGenerator<MessageStreamEvent> {
-  const response = await request(`${ANTHROPIC_BASE_URL}/messages`, {
-    method: 'POST',
-    headers: {
-      ...anthropicHeaders(apiKey, hasFile(body)),
-      'Content-Type': 'application/json',
-      Accept: 'text/event-stream',
-    },
-    body: JSON.stringify({ ...body, stream: true }),
-    signal,
-  })
+  const images = hasFile(body)
+  let response: Response
+  try {
+    response = await request(`${anthropicBase()}/v1/messages`, {
+      method: 'POST',
+      headers: {
+        ...anthropicHeaders(apiKey, images),
+        'Content-Type': 'application/json',
+        Accept: 'text/event-stream',
+      },
+      body: JSON.stringify({ ...body, stream: true }),
+      signal,
+    })
+  } catch (error) {
+    throw friendlyError(error, images)
+  }
   const contentType = response.headers.get('Content-Type') ?? ''
   if (!response.body || !contentType.includes('text/event-stream')) {
     throw await readErrorResponse(response, 'protocol', '')

@@ -10,6 +10,7 @@ import {
   IconEditOutline16,
   IconFollowsystemOutline16,
   IconLightOutline16,
+  IconLinkOutline16,
   IconSettingsOutline16,
   IconUploadOutline14,
 } from '../base/icons.js'
@@ -40,6 +41,8 @@ import {
 } from '../../services/chat/importProgress.js'
 import {
   isChineseBrowser,
+  setApiBaseUrl,
+  setApiModel,
   setFontScale,
   setFontWeight,
   setLocale,
@@ -77,11 +80,15 @@ export const SettingsDialog = () => {
   return open ? <SettingsContent /> : null
 }
 
-/** 三个分组的标题与图标：桌面侧边导航和移动端首页列表共用 */
+/** 四个分组的标题与图标：桌面侧边导航和移动端首页列表共用 */
 const sectionItems: Record<SettingsSection, { label: TranslationKey; icon: ReactNode }> = {
   general: {
     label: 'settingDialogAsideGeneralOptionLabel',
     icon: <IconSettingsOutline16 />,
+  },
+  api: {
+    label: 'settingDialogAsideApiOptionLabel',
+    icon: <IconLinkOutline16 />,
   },
   prompt: {
     label: 'settingDialogAsidePromptOptionLabel',
@@ -90,13 +97,14 @@ const sectionItems: Record<SettingsSection, { label: TranslationKey; icon: React
   data: { label: 'settingDialogAsideDataOptionLabel', icon: <IconDataOutline16 /> },
 }
 
-const sections = (['general', 'prompt', 'data'] as const).map((value) => ({
+const sections = (['general', 'api', 'prompt', 'data'] as const).map((value) => ({
   value,
   ...sectionItems[value],
 }))
 
 const sectionLabels: Record<SettingsSection, TranslationKey> = {
   general: 'settingDialogAsideGeneralOptionLabel',
+  api: 'settingDialogAsideApiOptionLabel',
   prompt: 'settingDialogAsidePromptOptionLabel',
   data: 'settingDialogAsideDataOptionLabel',
 }
@@ -105,6 +113,7 @@ const sectionLabels: Record<SettingsSection, TranslationKey> = {
 const SettingsMenu = ({ onSelect }: { onSelect: (section: SettingsSection) => void }) => {
   const t = useTranslate()
   const themePreference = useSettings((state) => state.themePreference)
+  const apiBaseUrl = useSettings((state) => state.apiBaseUrl)
   const [version, setVersion] = useState('')
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) {
@@ -133,6 +142,10 @@ const SettingsMenu = ({ onSelect }: { onSelect: (section: SettingsSection) => vo
       <div className={styles.menuCard}>
         {row('general', themeLabel)}
         {row('prompt')}
+      </div>
+      <div className={styles.menuGroup}>{t('settingDialogAsideApiOptionLabel')}</div>
+      <div className={styles.menuCard}>
+        {row('api', apiBaseUrl ?? undefined)}
       </div>
       <div className={styles.menuGroup}>{t('settingsGroupData')}</div>
       <div className={styles.menuCard}>{row('data')}</div>
@@ -240,11 +253,15 @@ const SettingsContent = () => {
                   <TtsVoiceSetting />
                   <LocationSetting />
                 </>
+              ) : section === 'api' ? (
+                <>
+                  <ApiSettings editor={apiKeyEditor} />
+                  {isMobile ? <ApiKeyConfirm editor={apiKeyEditor} /> : null}
+                </>
               ) : section === 'prompt' ? (
                 <PromptSetting />
               ) : (
                 <>
-                  <ApiKeyField editor={apiKeyEditor} />
                   <ImportHistory
                     historyImport={historyImport}
                     linkImport={linkImport}
@@ -267,7 +284,6 @@ const SettingsContent = () => {
                       </Button>
                     }
                   />
-                  {isMobile ? <ApiKeyConfirm editor={apiKeyEditor} /> : null}
                 </>
               )}
             </div>
@@ -719,6 +735,59 @@ const themeOptions: { value: ThemePreference; label: TranslationKey; icon: React
     icon: <IconFollowsystemOutline16 />,
   },
 ]
+
+/**
+ * API 设置：接口地址、API Key、自定义模型名。
+ * 接口需兼容 Anthropic 协议（/v1/messages）；留空即用官方接口与界面选择的模型。
+ */
+const ApiSettings = ({ editor }: { editor: ReturnType<typeof useApiKeyEditor> }) => {
+  const t = useTranslate()
+  const apiBaseUrl = useSettings((state) => state.apiBaseUrl)
+  const apiModel = useSettings((state) => state.apiModel)
+  const [baseUrl, setBaseUrl] = useState(apiBaseUrl ?? '')
+  const [model, setModel] = useState(apiModel ?? '')
+  return (
+    <>
+      <div className={styles.cell}>
+        <div className={styles.apiKey}>
+          <div className={styles.label}>{t('apiBaseUrlLabel')}</div>
+          <div className={styles.apiKeyInput}>
+            <input
+              type="text"
+              inputMode="url"
+              placeholder={t('apiBaseUrlPlaceholder')}
+              autoComplete="off"
+              spellCheck={false}
+              value={baseUrl}
+              onChange={(event) => setBaseUrl(event.target.value)}
+              onBlur={() => setApiBaseUrl(baseUrl)}
+            />
+          </div>
+          <div className={styles.description}>{t('apiBaseUrlHint')}</div>
+        </div>
+      </div>
+      <ApiKeyField editor={editor} />
+      <div className={styles.cell}>
+        <div className={styles.apiKey}>
+          <div className={styles.label}>{t('apiModelLabel')}</div>
+          <div className={styles.apiKeyInput}>
+            <input
+              type="text"
+              autoCapitalize="off"
+              placeholder={t('apiModelPlaceholder')}
+              autoComplete="off"
+              spellCheck={false}
+              value={model}
+              onChange={(event) => setModel(event.target.value)}
+              onBlur={() => setApiModel(model)}
+            />
+          </div>
+          <div className={styles.description}>{t('apiModelHint')}</div>
+        </div>
+      </div>
+    </>
+  )
+}
 
 /**
  * 字号：滑块一拖，全局正文的 --fs-scale 立刻跟着变，上方预览区就是真实效果。

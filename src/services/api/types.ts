@@ -173,7 +173,8 @@ export type DeepseekReadUrlTool = {
 }
 
 export type CreateMessageRequest = {
-  model: ChatModel
+  /** 界面选择的内置模型，或设置里填的自定义模型名（任意字符串） */
+  model: string
   system: string
   messages: MessageParam[]
   thinking: { type: 'enabled' | 'disabled' }
