@@ -1,4 +1,4 @@
-import { closeMobileSider, openMobileSider, useMobileSider } from '../components/sider/mobileSiderState.js'
+import { closeMobileSider, hideSoftKeyboard, openMobileSider, useMobileSider } from '../components/sider/mobileSiderState.js'
 
 /**
  * 移动端聊天记录抽屉的拖动 / 开合动画。
@@ -232,6 +232,8 @@ export const bindDrawerGesture = (frame: HTMLElement) => {
       stopAnim()
       base = progress
       frame.dataset.dragging = 'true'
+      // 抽屉一开始跟手就把软键盘收起来，不用等松手判定开合
+      hideSoftKeyboard()
     } else {
       event.preventDefault()
     }
