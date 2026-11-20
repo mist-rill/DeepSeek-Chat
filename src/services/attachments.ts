@@ -122,7 +122,8 @@ const enqueueUpload = (
   file: Blob,
   name: string,
   isImage: boolean,
-  signal: AbortSignal
+  signal: AbortSignal,
+  localId?: string
 ) =>
   new Promise<string>((resolve, reject) => {
     queue.push(async () => {
@@ -132,7 +133,7 @@ const enqueueUpload = (
       }
       try {
         const body = file instanceof File ? file : new File([file], name, { type: file.type })
-        resolve((await uploadFile(apiKey, body, getUploadPurpose(name, isImage), signal)).id)
+        resolve((await uploadFile(apiKey, body, getUploadPurpose(name, isImage), signal, localId)).id)
       } catch (error) {
         reject(error)
       }
@@ -177,7 +178,7 @@ export const uploadAttachment = (
   }
   const controller = new AbortController()
   setTask(id, { status: 'uploading' })
-  const promise = enqueueUpload(apiKey, blob, name, isImage, controller.signal)
+  const promise = enqueueUpload(apiKey, blob, name, isImage, controller.signal, id)
     .then((serverId) => {
       setTask(id, { status: 'done', serverId })
       return serverId
