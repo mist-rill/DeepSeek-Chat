@@ -1,0 +1,17 @@
+{
+  "appId": "com.deepseek.chatdemo",
+  "appName": "DeepSeek Chat",
+  "webDir": "dist",
+  "android": {
+    "allowMixedContent": true,
+    "adjustMarginsForEdgeToEdge": "disable"
+  },
+  "plugins": {
+    "Keyboard": {
+      "resizeOnFullScreen": true
+    }
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}

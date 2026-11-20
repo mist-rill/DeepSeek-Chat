@@ -1,0 +1,120 @@
+/*
+ * 抽屉开合的几何由 drawerGesture.ts 用内联 transform / opacity 驱动，
+ * 这里只放静态声明和「关着」的默认值（圆角 / 投影 / 锚点都是常量）。
+ * 不要把这些属性改回 CSS 变量：自定义属性是继承的，每帧写一次会让整棵聊天 DOM 重算样式。
+ */
+.frame {
+  --drawer-peek: 0px;
+  --drawer-shadow: rgb(15 15 15 / 8%);
+  position: absolute;
+  inset: 0;
+  display: flex;
+  overflow: hidden;
+  background-color: var(--dsw-alias-bg-base);
+}
+
+/* 拖动中禁止选中文字（长按拖动时正文会被框选） */
+.frame[data-dragging] {
+  user-select: none;
+}
+
+/*
+ * 关闭抽屉时的整块暗化层：盖住抽屉和卡片圆角外露出的底衬，
+ * 夹在抽屉（800）与聊天卡片（810）之间；默认全透明，透明度由手势逐帧控制。
+ */
+.drawerDim {
+  position: absolute;
+  inset: 0;
+  z-index: 805;
+  pointer-events: none;
+  background-color: #000;
+  opacity: 0;
+}
+
+.main {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  /* 圆角为 0 时裁切不起作用；卡片态靠它把内容裁在圆角纸边内 */
+  overflow: hidden;
+  background-color: var(--dsw-alias-bg-base);
+}
+
+.content {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.saveError {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 16px;
+  color: var(--dsw-alias-label-primary);
+  background-color: var(--dsw-alias-bg-base);
+  font-size: 14px;
+}
+
+.loadingView {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.loadingState {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 14px;
+  text-align: center;
+}
+
+@media not all and (min-width: 768px) {
+  .frame {
+    position: fixed;
+    top: var(--app-viewport-top, 0px);
+    bottom: auto;
+    height: var(--app-viewport-height, 100dvh);
+    /* 卡片抬起后露出的底衬与聊天页同色，只靠阴影分层 */
+    background-color: var(--dsw-alias-bg-base);
+
+    /* 抽屉打开时，聊天卡片仍露出的宽度（官方 17.5% 屏宽） */
+    --drawer-peek: 68px;
+  }
+
+  /*
+   * 卡片提到抽屉之上：开合过程中两页一直贴合，卡片投影落在抽屉那一侧；
+   * 位移 + 缩放交给合成层，拖动时只合成、不重排不重绘。
+   * scale 以左缘为锚：左缘贴着手指走的位移，上下对称收出留白。
+   * 投影写成常量：关闭时卡片满屏、阴影整体在视口外被 frame 裁掉，天然不可见；
+   * 以前逐帧改 blur 会让整个卡片层重栅格化，是「卡顿抽搐」的另一来源。
+   * 四角圆角恒定与手机屏幕实际圆角一致（--screen-radius 由原生给出）。
+   */
+  .main {
+    z-index: 810;
+    will-change: transform;
+    transform-origin: left center;
+    box-shadow: 0 0 26px var(--drawer-shadow);
+    border-radius: var(--screen-radius, 38px);
+  }
+
+  [data-ds-dark-theme] .frame {
+    background-color: var(--dsw-alias-bg-base);
+  }
+}
+
+/* 深色底上浅色阴影看不出来，改用纯黑投影，保持同样的"抬起"观感 */
+[data-ds-dark-theme] .frame {
+  --drawer-shadow: rgb(0 0 0 / 55%);
+}

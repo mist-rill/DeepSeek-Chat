@@ -1,0 +1,110 @@
+@keyframes overlayFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes contentSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.overlay {
+  --overlay-opacity: 0.36;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, var(--overlay-opacity));
+  backdrop-filter: blur(2px);
+  animation: overlayFadeIn 0.2s ease both;
+
+  [data-ds-dark-theme] & {
+    --overlay-opacity: 0.6;
+  }
+}
+
+.content {
+  animation: contentSlideUp 0.28s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: 380px;
+  max-width: calc(100vw - 32px);
+  padding: 22px 24px;
+  border-radius: 24px;
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--dsw-alias-label-primary);
+  background-color: var(--dsw-alias-bg-layer-2);
+  box-shadow:
+    inset 0 0 0 1px var(--dsw-alias-border-inverted),
+    0 0 1px 0 rgba(0, 0, 0, 0.2),
+    0 0 4px 0 rgba(0, 0, 0, 0.02),
+    0 12px 32px 0 rgba(0, 0, 0, 0.08);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: var(--modal-header-gap, 12px);
+}
+
+.title {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: var(--fs-weight-mid, 500);
+}
+
+/* 有左侧返回按钮时标题居中，像原生二级页面 */
+.headerWithLeading {
+  position: relative;
+  justify-content: flex-start;
+
+  .title {
+    position: absolute;
+    right: 0;
+    left: 0;
+    text-align: center;
+    pointer-events: none;
+  }
+}
+
+.leading {
+  display: flex;
+  align-items: center;
+  z-index: 1;
+}
+
+.close {
+  margin-right: -10px;
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.main {
+  color: var(--dsw-alias-label-secondary);
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}

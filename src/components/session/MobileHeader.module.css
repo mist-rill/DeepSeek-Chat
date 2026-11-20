@@ -1,0 +1,21 @@
+.header {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  /* 状态栏区域由页面自己铺底，控件整体下移到系统栏下面 */
+  height: calc(60px + var(--safe-top, 0px));
+  padding: calc(12px + var(--safe-top, 0px)) 10px 4px;
+  background: var(--dsw-alias-bg-base);
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  margin: 0 12px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font: var(--dsw-font-s-strong-14);
+  color: var(--dsw-alias-label-primary);
+}
