@@ -147,6 +147,12 @@ const SettingsMenu = ({ onSelect }: { onSelect: (section: SettingsSection) => vo
           </div>
         </>
       ) : null}
+      {/* 底部声明：仿官方设置页脚，标注作者 */}
+      <div className={styles.menuFooter}>
+        <div>{t('settingsFooterAppName')}</div>
+        <div>{t('settingsFooterAuthor')}</div>
+        <div>{t('settingsFooterAiNotice')}</div>
+      </div>
     </div>
   )
 }
