@@ -72,4 +72,16 @@ src/
 
 ## 许可证
 
-[MIT](LICENSE)。构建会将许可证复制到 `dist/LICENSE`，分发时请一并保留；第三方依赖遵循各自的许可证。
+[MIT](LICENSE)。构建会将许可证复制到 `dist/LICENSE`，分发时请一并保留；第三方组件见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。
+
+## 致谢与声明
+
+本项目基于 DeepSeek 官方开源项目 [deepseek-ai/chat-demo](https://github.com/deepseek-ai/chat-demo)（MIT License）修改而来，原项目的全部成果归其作者所有。在原项目基础之上的全部修改（移动端手势与圆角适配、字号字重调节、自定义接口、原生音效等）由 [mist-rill](https://github.com/mist-rill) 完成，同样以 MIT 协议发布。
+
+修改版的三个分支：
+
+- `main`：正式版
+- `custom-api`：自定义 API 接口版（OpenAI 兼容协议）
+- `cute`：原生音效版
+
+本项目为个人学习作品，与 DeepSeek 官方无隶属或背书关系；「DeepSeek」名称与商标归其权利人所有。
