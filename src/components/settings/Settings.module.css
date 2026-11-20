@@ -526,6 +526,15 @@
     color: var(--dsw-alias-label-tertiary);
   }
 
+  /* 底部声明：仿官方设置页脚的居中灰色小字 */
+  .menuFooter {
+    padding: 28px 16px 12px;
+    color: var(--dsw-alias-label-tertiary);
+    font-size: 12px;
+    line-height: 20px;
+    text-align: center;
+  }
+
   /* 二级页内容整块放进一张卡片，行与行之间保留细分隔线 */
   .content.mobileContent {
     flex: 0 1 auto;
