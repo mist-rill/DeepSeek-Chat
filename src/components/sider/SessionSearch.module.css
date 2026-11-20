@@ -1,4 +1,4 @@
-/* 与「开启新对话」同宽同高的胶囊搜索框；官方样式为白底细描边，不做灰色填充 */
+/* 与「开启新对话」同宽同高的胶囊搜索框；不靠描边，靠整框比侧栏底色更暗来凸显 */
 .box {
   display: flex;
   align-items: center;
@@ -7,15 +7,15 @@
   width: 100%;
   height: 40px;
   padding: 0 12px;
-  /* l1 只有 4% 黑、肉眼几乎不可见，官方描边观感对应 l2（浅色 10% 黑 / 深色 12% 白） */
-  border: 1px solid var(--dsw-alias-border-l2);
+  border: none;
   border-radius: 100px;
-  background-color: transparent;
+  /* interactive-bg-hover 主题自适应：浅色为半透明深色（整框变暗），深色为半透明白（暗底上浮起） */
+  background-color: var(--dsw-alias-interactive-bg-hover);
   flex-shrink: 0;
-  transition: border-color 0.2s ease;
+  transition: background-color 0.2s ease;
 
   &:focus-within {
-    border-color: var(--dsw-alias-brand-primary);
+    background-color: var(--dsw-alias-interactive-bg-active);
   }
 }
 
