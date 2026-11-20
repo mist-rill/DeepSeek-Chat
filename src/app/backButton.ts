@@ -5,6 +5,7 @@ import { closeTopModal } from '../components/base/Modal.js'
 import { showToast } from '../components/base/toastState.js'
 import { closeSearchPanel, useSearchPanel } from '../components/search/searchPanelState.js'
 import { closeMobileSider, useMobileSider } from '../components/sider/mobileSiderState.js'
+import { playCuteSound } from '../cute/sound.js'
 
 /** 两次返回键间隔小于此值才退出，避免误触直接回桌面 */
 const EXIT_INTERVAL = 2500
@@ -50,7 +51,9 @@ export const useAndroidBackButton = () => {
       // 5) 主界面：二次确认才退出
       const now = Date.now()
       if (now - lastBack < EXIT_INTERVAL) {
-        void CapacitorApp.exitApp()
+        // 退出前先说「再见」，留出一点时间让声音放出来（音效约 0.7s）
+        playCuteSound('home', 0.9)
+        window.setTimeout(() => void CapacitorApp.exitApp(), 520)
       } else {
         lastBack = now
         showToast({ key: 'backExitHint' })

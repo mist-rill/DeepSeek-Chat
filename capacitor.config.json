@@ -1,6 +1,6 @@
 {
-  "appId": "com.deepseek.chatdemo",
-  "appName": "DeepSeek Chat",
+  "appId": "com.deepseek.chatcute",
+  "appName": "DeepSeek Cute",
   "webDir": "dist",
   "android": {
     "allowMixedContent": true,

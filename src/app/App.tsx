@@ -5,6 +5,7 @@ import { useIsMobile, useMobileViewport, usePreventPageScroll } from './viewport
 import { bindDrawerGesture } from './drawerGesture.js'
 import { closeMobileSider } from '../components/sider/mobileSiderState.js'
 import { useAndroidBackButton } from './backButton.js'
+import { installCuteSoundListeners } from '../cute/sound.js'
 import {
   bindChatPersistence,
   initChat,
@@ -55,6 +56,8 @@ export const App = () => {
 
   usePreventPageScroll(isMobile)
   useAndroidBackButton()
+  // Cute 音效：全局点击 / 滑动提示音（原生 SoundPool）
+  useEffect(() => installCuteSoundListeners(), [])
 
   useEffect(() => {
     document.documentElement.lang = locale

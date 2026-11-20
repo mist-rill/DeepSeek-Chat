@@ -38,7 +38,11 @@ public class MainActivity extends BridgeActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             window.setNavigationBarContrastEnforced(false);
         }
+        // 必须在 super.onCreate 之前注册 Cute 音效插件
+        registerPlugin(CuteSoundPlugin.class);
         super.onCreate(savedInstanceState);
+        // 提前预加载音效，避免第一次点击有延迟
+        CuteSoundPlugin.ensurePool(this);
 
         ViewCompat.setOnApplyWindowInsetsListener(getBridge().getWebView(), (view, windowInsets) -> {
             Insets insets = windowInsets.getInsets(
@@ -50,6 +54,21 @@ public class MainActivity extends BridgeActivity {
             return windowInsets;
         });
         getBridge().getWebView().addJavascriptInterface(new InsetsBridge(), "AndroidInsets");
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // 首次启动 + 从后台切回都算「打开软件」→ 播放おはようございます
+        CuteSoundPlugin.playByName(this, "boot", 0.9f);
+    }
+
+    @Override
+    public void onUserLeaveHint() {
+        super.onUserLeaveHint();
+        // 用户按 Home 键 / 切到最近任务时触发（此时 WebView 已被挂起，
+        // 只有这里还来得及发声）→ 播放「再见」
+        CuteSoundPlugin.playByName(this, "home", 0.9f);
     }
 
     public class InsetsBridge {
