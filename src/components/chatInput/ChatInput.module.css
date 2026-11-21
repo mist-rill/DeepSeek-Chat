@@ -349,6 +349,26 @@
 }
 
 /* 添加面板：输入卡片下方的独立圆角卡片，拍照 / 相册 / 文件三等分 */
+/* 面板外层：高度折叠 + 上滑 + 淡入淡出，展开与收起都有动画 */
+.panelWrapper {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transform: translateY(12px);
+  pointer-events: none;
+  transition:
+    max-height 0.24s var(--ds-ease-in-out),
+    opacity 0.18s var(--ds-ease-in-out),
+    transform 0.24s var(--ds-ease-in-out);
+}
+
+.panelWrapperOpen {
+  max-height: 140px;
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
 .panel {
   box-sizing: border-box;
   width: 100%;
@@ -358,7 +378,6 @@
   border: 1px solid var(--dsw-alias-border-l2-darkmode-thin);
   background: var(--dsw-specific-input-major);
   cursor: default;
-  animation: panelIn 0.15s var(--ds-ease-in-out) both;
 }
 
 .panelActions {
@@ -396,17 +415,6 @@
   &:disabled {
     opacity: 0.4;
     cursor: not-allowed;
-  }
-}
-
-@keyframes panelIn {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
   }
 }
 
