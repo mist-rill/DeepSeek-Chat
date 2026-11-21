@@ -151,6 +151,8 @@ export const App = () => {
               <Welcome />
             )}
           </div>
+          {/* 抽屉打开时盖在聊天卡片上的主题色白纱：透明度由 drawerGesture.ts 逐帧跟随进度写 */}
+          {isMobile && <div data-drawer-veil className={styles.drawerVeil} aria-hidden="true" />}
         </main>
         <SearchPanel />
       </div>
