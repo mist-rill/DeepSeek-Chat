@@ -1191,9 +1191,13 @@ const checkForUpdate = async (apkPrefix: string, localCode: number): Promise<Upd
     body?: string
     assets?: { name: string; browser_download_url: string }[]
   }
-  const asset = release.assets?.find(
-    (item) => item.name.startsWith(apkPrefix) && item.name.endsWith('.apk')
-  )
+  const asset = release.assets?.find((item) => {
+    if (!item.name.endsWith('.apk') || !item.name.startsWith(apkPrefix)) {
+      return false
+    }
+    // 前缀后必须直接是版本号，避免 DeepSeek-Chat- 误匹配 DeepSeek-Chat-CustomApi-
+    return /^v[\d.]+\.apk$/.test(item.name.slice(apkPrefix.length))
+  })
   const row = (release.body ?? '')
     .split('\n')
     .find((line) => asset && line.includes(asset.name))
