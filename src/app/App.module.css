@@ -31,6 +31,19 @@
   opacity: 0;
 }
 
+/*
+ * 抽屉打开时盖在聊天卡片上的白纱：对齐官方 App——聊天界面渐渐变白，
+ * 只剩隐约的轮廓。颜色跟随主题背景色（暗色下即渐暗），透明度由手势逐帧写。
+ */
+.drawerVeil {
+  position: absolute;
+  inset: 0;
+  z-index: 999;
+  pointer-events: none;
+  background-color: var(--dsw-alias-bg-base);
+  opacity: 0;
+}
+
 .main {
   position: relative;
   display: flex;
