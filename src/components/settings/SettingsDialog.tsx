@@ -1,7 +1,7 @@
 import clsx from 'clsx'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Capacitor } from '@capacitor/core'
-import { App } from '@capacitor/app'
+import { App, type AppInfo } from '@capacitor/app'
 import {
   IconChevronRightOutline14,
   IconDarkOutline16,
@@ -9,7 +9,9 @@ import {
   IconDownloadOutline16,
   IconEditOutline16,
   IconFollowsystemOutline16,
+  IconInfoOutline16,
   IconLightOutline16,
+  IconRightUpOutline14,
   IconSettingsOutline16,
   IconUploadOutline14,
 } from '../base/icons.js'
@@ -88,9 +90,10 @@ const sectionItems: Record<SettingsSection, { label: TranslationKey; icon: React
     icon: <IconEditOutline16 />,
   },
   data: { label: 'settingDialogAsideDataOptionLabel', icon: <IconDataOutline16 /> },
+  about: { label: 'settingsGroupAbout', icon: <IconInfoOutline16 /> },
 }
 
-const sections = (['general', 'prompt', 'data'] as const).map((value) => ({
+const sections = (['general', 'prompt', 'data', 'about'] as const).map((value) => ({
   value,
   ...sectionItems[value],
 }))
@@ -99,6 +102,7 @@ const sectionLabels: Record<SettingsSection, TranslationKey> = {
   general: 'settingDialogAsideGeneralOptionLabel',
   prompt: 'settingDialogAsidePromptOptionLabel',
   data: 'settingDialogAsideDataOptionLabel',
+  about: 'settingsGroupAbout',
 }
 
 /** 移动端设置首页：像原生 App 一样按「应用 / 数据 / 关于」分组的白色卡片列表 */
@@ -136,23 +140,8 @@ const SettingsMenu = ({ onSelect }: { onSelect: (section: SettingsSection) => vo
       </div>
       <div className={styles.menuGroup}>{t('settingsGroupData')}</div>
       <div className={styles.menuCard}>{row('data')}</div>
-      {version ? (
-        <>
-          <div className={styles.menuGroup}>{t('settingsGroupAbout')}</div>
-          <div className={styles.menuCard}>
-            <div className={clsx(styles.menuRow, styles.menuRowStatic)}>
-              <span className={styles.menuLabel}>{t('settingsVersion')}</span>
-              <span className={styles.menuValue}>{version}</span>
-            </div>
-          </div>
-        </>
-      ) : null}
-      {/* 底部声明：仿官方设置页脚，标注作者 */}
-      <div className={styles.menuFooter}>
-        <div>{t('settingsFooterAppName')}</div>
-        <div>{t('settingsFooterAuthor')}</div>
-        <div>{t('settingsFooterAiNotice')}</div>
-      </div>
+      <div className={styles.menuGroup}>{t('settingsGroupAbout')}</div>
+      <div className={styles.menuCard}>{row('about', version || undefined)}</div>
     </div>
   )
 }
@@ -248,6 +237,8 @@ const SettingsContent = () => {
                 </>
               ) : section === 'prompt' ? (
                 <PromptSetting />
+              ) : section === 'about' ? (
+                <AboutSetting />
               ) : (
                 <>
                   <ApiKeyField editor={apiKeyEditor} />
@@ -1156,5 +1147,181 @@ const ExportLogs = () => {
         </Button>
       }
     />
+  )
+}
+
+/** 项目仓库与发布信息：检查更新读取 GitHub 最新 Release 正文中对应 APK 行的版本号 */
+const REPO_URL = 'https://github.com/mist-rill/DeepSeek-Chat'
+const AUTHOR_URL = 'https://github.com/mist-rill'
+const THIRD_PARTY_URL = `${REPO_URL}/blob/main/THIRD-PARTY-NOTICES.md`
+const LATEST_RELEASE_URL = 'https://api.github.com/repos/mist-rill/DeepSeek-Chat/releases/latest'
+
+/** 当前构建对应的 Release APK 资产名：正文表格按 APK 名标出 (code N) */
+const APK_BY_PACKAGE: Record<string, string> = {
+  'com.deepseek.chatdemo': 'DeepSeek-Chat-v1.apk',
+  'com.deepseek.chatdemo.custom': 'DeepSeek-Chat-CustomApi-v1.apk',
+  'com.deepseek.chatcute': 'DeepSeek-Cute-v2.apk',
+}
+
+/** 原生端同窗口跳外部链接会被 Capacitor 拦截并交给系统浏览器打开；网页端开新窗口 */
+const openExternal = (url: string) => {
+  if (Capacitor.isNativePlatform()) {
+    window.location.href = url
+  } else {
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
+}
+
+type UpdateStatus =
+  | { kind: 'idle' }
+  | { kind: 'checking' }
+  | { kind: 'latest' }
+  | { kind: 'available'; version: string; url: string }
+  | { kind: 'failed' }
+
+/** 用 Release 正文表格里「| APK名 | vX.Y (code N) |」的 code 与本地 versionCode 比较 */
+const checkForUpdate = async (apkName: string, localCode: number): Promise<UpdateStatus> => {
+  const response = await fetch(LATEST_RELEASE_URL, {
+    headers: { Accept: 'application/vnd.github+json' },
+  })
+  if (!response.ok) {
+    return { kind: 'failed' }
+  }
+  const release = (await response.json()) as {
+    body?: string
+    assets?: { name: string; browser_download_url: string }[]
+  }
+  const asset = release.assets?.find((item) => item.name === apkName)
+  const row = (release.body ?? '')
+    .split('\n')
+    .find((line) => line.includes(apkName))
+  const match = row?.match(/\|\s*v(\d+(?:\.\d+)*)\s*\(code (\d+)\)/)
+  if (!asset || !match) {
+    return { kind: 'failed' }
+  }
+  const [, version, code] = match
+  return Number(code) > localCode
+    ? { kind: 'available', version, url: asset.browser_download_url }
+    : { kind: 'latest' }
+}
+
+/** 「关于」页：版本与检查更新、项目仓库、作者、开源协议声明 */
+const AboutSetting = () => {
+  const t = useTranslate()
+  const [info, setInfo] = useState<AppInfo | null>(null)
+  const [status, setStatus] = useState<UpdateStatus>({ kind: 'idle' })
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) {
+      return
+    }
+    void App.getInfo().then(setInfo)
+  }, [])
+
+  const apkName = info ? APK_BY_PACKAGE[info.id] : undefined
+  const checking = status.kind === 'checking'
+  const available = status.kind === 'available'
+
+  const onCheck = async () => {
+    if (!info || !apkName || checking) {
+      return
+    }
+    setStatus({ kind: 'checking' })
+    try {
+      setStatus(await checkForUpdate(apkName, Number(info.build)))
+    } catch {
+      setStatus({ kind: 'failed' })
+    }
+  }
+
+  const resultText =
+    status.kind === 'checking'
+      ? t('settingsAboutChecking')
+      : status.kind === 'latest'
+        ? t('settingsAboutUpToDate')
+        : status.kind === 'failed'
+          ? t('settingsAboutCheckFailed')
+          : status.kind === 'available'
+            ? t('settingsAboutNewVersion', { version: status.version })
+            : undefined
+
+  return (
+    <>
+      <SettingCell
+        label={t('settingsAboutCheckUpdate')}
+        description={
+          info ? t('settingsVersion') + ` v${info.version} (${info.build})` : undefined
+        }
+        status={
+          resultText
+            ? {
+                key: 'settingsAboutCheckResult',
+                params: { message: resultText },
+                error: status.kind === 'failed',
+              }
+            : null
+        }
+        action={
+          <Button
+            variant={available ? 'primary' : 'outlined'}
+            size="m"
+            className={styles.cellButton}
+            disabled={checking || (!available && !apkName)}
+            onClick={() =>
+              available ? openExternal(status.url) : void onCheck()
+            }
+          >
+            {available ? t('settingsAboutDownload') : t('settingsAboutCheckUpdate')}
+          </Button>
+        }
+      />
+      <SettingCell
+        label={t('settingsAboutRepo')}
+        status={null}
+        action={
+          <Button
+            variant="outlined"
+            size="m"
+            className={clsx(styles.cellButton, styles.uploadButton)}
+            onClick={() => openExternal(REPO_URL)}
+          >
+            <IconRightUpOutline14 />
+            {t('settingsAboutOpen')}
+          </Button>
+        }
+      />
+      <SettingCell
+        label={t('settingsAboutAuthor')}
+        description="MistRill"
+        status={null}
+        action={
+          <Button
+            variant="outlined"
+            size="m"
+            className={clsx(styles.cellButton, styles.uploadButton)}
+            onClick={() => openExternal(AUTHOR_URL)}
+          >
+            <IconRightUpOutline14 />
+            {t('settingsAboutOpen')}
+          </Button>
+        }
+      />
+      <SettingCell
+        label={t('settingsAboutLicense')}
+        description={t('settingsAboutLicenseDescription')}
+        status={null}
+        action={
+          <Button
+            variant="outlined"
+            size="m"
+            className={styles.cellButton}
+            onClick={() => openExternal(THIRD_PARTY_URL)}
+          >
+            {t('settingsAboutThirdParty')}
+          </Button>
+        }
+      />
+      <div className={styles.promptNote}>{t('settingsAboutAiNotice')}</div>
+    </>
   )
 }

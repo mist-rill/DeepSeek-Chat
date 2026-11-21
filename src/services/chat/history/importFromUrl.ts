@@ -54,7 +54,7 @@ const statusError = (status: number) => {
 const guessFileName = (url: string) => {
   try {
     const last = decodeURIComponent(new URL(url).pathname.split('/').filter(Boolean).pop() ?? '')
-    if (last && last.includes('.')) return last
+    if (last && last.includes('.')) {return last}
   } catch {
     /* 交给下面的兜底 */
   }
@@ -101,7 +101,7 @@ const CHUNK_BYTES = 4 * 1024 * 1024
 
 /** 响应头大小写不固定（原生侧保留服务端原始大小写），统一小写查 */
 const headerOf = (headers: Record<string, string> | undefined, name: string) => {
-  if (!headers) return ''
+  if (!headers) {return ''}
   const key = Object.keys(headers).find((item) => item.toLowerCase() === name)
   return key ? String(headers[key]) : ''
 }
@@ -242,8 +242,8 @@ const downloadWeb = async (url: string, onProgress: DownloadProgress): Promise<F
   let received = 0
   for (;;) {
     const { done, value } = await reader.read()
-    if (done) break
-    if (!value) continue
+    if (done) {break}
+    if (!value) {continue}
     received += value.byteLength
     if (received > MAX_BYTES) {
       await reader.cancel()
