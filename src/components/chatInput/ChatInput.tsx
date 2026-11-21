@@ -61,8 +61,28 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const albumInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
+  const addButtonRef = useRef<HTMLButtonElement>(null)
   // 添加面板：点 + 展开「拍照 / 相册 / 文件」，图标旋转 45° 呈叉状
   const [panelOpen, setPanelOpen] = useState(false)
+  // 点击面板与「添加」按钮以外的区域时收起面板
+  useEffect(() => {
+    if (!panelOpen) {
+      return
+    }
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null
+      if (!target) {
+        return
+      }
+      if (panelRef.current?.contains(target) || addButtonRef.current?.contains(target)) {
+        return
+      }
+      setPanelOpen(false)
+    }
+    document.addEventListener('pointerdown', onPointerDown, true)
+    return () => document.removeEventListener('pointerdown', onPointerDown, true)
+  }, [panelOpen])
   // 键盘开合：原生订阅 Keyboard 事件，网页端跟随聚焦状态；占位文案随它切换
   const [keyboardOpen, setKeyboardOpen] = useState(false)
   useEffect(() => {
@@ -265,6 +285,7 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
           <Tooltip content={t('chatInputAdd')}>
             <button
               type="button"
+              ref={addButtonRef}
               className={clsx(styles.addButton, panelOpen && styles.addButtonOpen)}
               aria-label={t('chatInputAdd')}
               aria-expanded={panelOpen}
@@ -354,7 +375,7 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
       </div>
       </div>
       {/* 面板常驻挂载：通过 class 切换实现展开/收起的上滑与淡入淡出动画 */}
-      <div className={clsx(styles.panelWrapper, panelOpen && styles.panelWrapperOpen)}>
+      <div className={clsx(styles.panelWrapper, panelOpen && styles.panelWrapperOpen)} ref={panelRef}>
         <div className={styles.panel}>
           <div className={styles.panelActions}>
             <button
