@@ -353,7 +353,8 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
         </div>
       </div>
       </div>
-      {panelOpen ? (
+      {/* 面板常驻挂载：通过 class 切换实现展开/收起的上滑与淡入淡出动画 */}
+      <div className={clsx(styles.panelWrapper, panelOpen && styles.panelWrapperOpen)}>
         <div className={styles.panel}>
           <div className={styles.panelActions}>
             <button
@@ -385,7 +386,7 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
             </button>
           </div>
         </div>
-      ) : null}
+      </div>
       {dragging ? <DragMask /> : null}
     </>
   )
