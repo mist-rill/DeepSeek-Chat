@@ -1,9 +1,13 @@
 import clsx from 'clsx'
 import { Capacitor } from '@capacitor/core'
-import { memo, useCallback, useEffect, useRef } from 'react'
+import { Keyboard } from '@capacitor/keyboard'
+import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import {
+  IconCameraOutline16,
   IconGlobeLanguageOutline14,
+  IconPhotoOutline16,
   IconPaperclipOutline16,
+  IconPlusOutline16,
   IconSendOutline16,
   IconStopFill16,
   IconThinkOutline14,
@@ -22,7 +26,6 @@ import {
   useDrafts,
 } from '../../services/chat/drafts.js'
 import { stopReadAloud } from '../../services/speech/readAloud.js'
-import { IconButton } from '../base/IconButton.js'
 import { Tooltip } from '../base/Tooltip.js'
 import { ensureApiKey } from '../settings/settingsDialogState.js'
 import { DragMask, useFileDrop } from './DragMask.js'
@@ -55,7 +58,24 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
   const isMobile = useIsMobile()
   const search = useSettings((state) => state.search)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+  const albumInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  // 添加面板：点 + 展开「拍照 / 相册 / 文件」，图标旋转 45° 呈叉状
+  const [panelOpen, setPanelOpen] = useState(false)
+  // 键盘开合：原生订阅 Keyboard 事件，网页端跟随聚焦状态；占位文案随它切换
+  const [keyboardOpen, setKeyboardOpen] = useState(false)
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) {
+      return
+    }
+    const shown = Keyboard.addListener('keyboardWillShow', () => setKeyboardOpen(true))
+    const hidden = Keyboard.addListener('keyboardWillHide', () => setKeyboardOpen(false))
+    return () => {
+      void shown.then((handle) => handle.remove())
+      void hidden.then((handle) => handle.remove())
+    }
+  }, [])
 
   const acceptFiles = (files: File[]) => {
     if (files.length === 0 || useChatStore.getState().importingHistory || !ensureApiKey()) {
@@ -114,6 +134,9 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
 
   // 排队、上传中或上传失败的附件都留在输入框，全部上传成功后才能发送
   const canSend = !importingHistory && !streaming && voice.status === 'idle' && draftReady
+  // 有文字或附件时语音按钮让位给发送/停止（录音中除外）
+  const hasContent = text.trim().length > 0 || attachments.length > 0
+  const showVoice = !hasContent || voice.status === 'recording'
 
   const send = () => {
     if (
@@ -128,6 +151,7 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
       return
     }
     stopReadAloud()
+    setPanelOpen(false)
     if (isMobile) {
       textareaRef.current?.blur()
     } else {
@@ -135,27 +159,42 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
     }
   }
 
+  // 占位文案：移动端随键盘开合切换（官方行为），桌面端固定
+  const placeholder = isMobile && !keyboardOpen ? t('chatInputPlaceholderHoldTalk') : t('chatInputPlaceholderChat')
+
+  const pickFiles = (files: File[]) => {
+    setPanelOpen(false)
+    acceptFiles(files)
+  }
+
   return (
-    <div
-      className={clsx(styles.wrapper, sessionId === null ? styles.home : styles.session)}
-      onClick={(event) => {
-        if (event.target === event.currentTarget) {
-          textareaRef.current?.focus({ preventScroll: true })
-        }
-      }}
-    >
-      <DraftAttachments items={attachments} onRetry={retryFile} onRemove={removeFile} />
-      <div className={styles.textareaWrapper}>
-        <textarea
-          ref={textareaRef}
-          className={clsx(styles.textarea, recording && isMobile && styles.textareaHidden)}
-          placeholder={t('chatInputPlaceholderChat')}
-          rows={2}
-          // 移动端不自动聚焦，避免一打开就弹出键盘
-          autoFocus={!isMobile}
-          disabled={importingHistory}
-          value={text}
-          onChange={(event) => setText(event.target.value)}
+    <>
+      <div
+        className={clsx(styles.wrapper, sessionId === null ? styles.home : styles.session)}
+        onClick={(event) => {
+          if (event.target === event.currentTarget) {
+            textareaRef.current?.focus({ preventScroll: true })
+          }
+        }}
+      >
+        <DraftAttachments items={attachments} onRetry={retryFile} onRemove={removeFile} />
+        <div className={styles.textareaWrapper}>
+          <textarea
+            ref={textareaRef}
+            className={clsx(styles.textarea, recording && isMobile && styles.textareaHidden)}
+            placeholder={placeholder}
+            rows={2}
+            // 移动端不自动聚焦，避免一打开就弹出键盘
+            autoFocus={!isMobile}
+            disabled={importingHistory}
+            value={text}
+            onChange={(event) => setText(event.target.value)}
+            onFocus={() => {
+              // 聚焦弹键盘时收起添加面板，占位文案切换为「发消息」
+              setPanelOpen(false)
+              setKeyboardOpen(true)
+            }}
+            onBlur={() => setKeyboardOpen(false)}
           onMouseDown={(event) => {
             // 首次点击时手动聚焦，避免 Safari 把整个页面滚到输入框位置。
             if (isMobile && event.button === 0 && document.activeElement !== event.currentTarget) {
@@ -222,39 +261,21 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
           </Tooltip>
         </div>
         <div className={styles.right}>
-          <VoiceButton
-            status={voice.status}
-            disabled={!voice.available}
-            seconds={voice.seconds}
-            onClick={() => {
-              if (
-                voice.status !== 'idle' ||
-                (!useChatStore.getState().importingHistory && ensureApiKey())
-              ) {
-                void voice.toggle()
-              }
-            }}
-          />
-          <IconButton
-            size="m"
-            tone="primary"
-            icon={<IconPaperclipOutline16 />}
-            tooltip={t('uploadFile')}
-            disabled={importingHistory}
-            onClick={() => ensureApiKey() && fileInputRef.current?.click()}
-          />
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            hidden
-            accept={ACCEPT}
-            onChange={(event) => {
-              acceptFiles(Array.from(event.target.files ?? []))
-              event.target.value = ''
-            }}
-          />
-          {streaming && sessionId ? (
+          {showVoice ? (
+            <VoiceButton
+              status={voice.status}
+              disabled={!voice.available}
+              seconds={voice.seconds}
+              onClick={() => {
+                if (
+                  voice.status !== 'idle' ||
+                  (!useChatStore.getState().importingHistory && ensureApiKey())
+                ) {
+                  void voice.toggle()
+                }
+              }}
+            />
+          ) : streaming && sessionId ? (
             <button
               type="button"
               className={styles.sendButton}
@@ -277,9 +298,95 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
               <IconSendOutline16 />
             </button>
           )}
+          {/* 添加：点开旋转 45° 呈叉状，并展开「拍照 / 相册 / 文件」面板 */}
+          <Tooltip content={t('chatInputAdd')}>
+            <button
+              type="button"
+              className={clsx(styles.addButton, panelOpen && styles.addButtonOpen)}
+              aria-label={t('chatInputAdd')}
+              aria-expanded={panelOpen}
+              disabled={importingHistory}
+              onClick={() => {
+                if (!panelOpen) {
+                  textareaRef.current?.blur()
+                  setKeyboardOpen(false)
+                }
+                setPanelOpen(!panelOpen)
+              }}
+            >
+              <IconPlusOutline16 />
+            </button>
+          </Tooltip>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            hidden
+            accept={ACCEPT}
+            onChange={(event) => {
+              pickFiles(Array.from(event.target.files ?? []))
+              event.target.value = ''
+            }}
+          />
+          <input
+            ref={cameraInputRef}
+            type="file"
+            hidden
+            accept="image/*"
+            capture="environment"
+            onChange={(event) => {
+              pickFiles(Array.from(event.target.files ?? []))
+              event.target.value = ''
+            }}
+          />
+          <input
+            ref={albumInputRef}
+            type="file"
+            multiple
+            hidden
+            accept="image/*"
+            onChange={(event) => {
+              pickFiles(Array.from(event.target.files ?? []))
+              event.target.value = ''
+            }}
+          />
         </div>
       </div>
+      </div>
+      {panelOpen ? (
+        <div className={styles.panel}>
+          <div className={styles.panelActions}>
+            <button
+              type="button"
+              className={styles.panelAction}
+              disabled={importingHistory}
+              onClick={() => ensureApiKey() && cameraInputRef.current?.click()}
+            >
+              <IconCameraOutline16 />
+              {t('chatInputCamera')}
+            </button>
+            <button
+              type="button"
+              className={styles.panelAction}
+              disabled={importingHistory}
+              onClick={() => ensureApiKey() && albumInputRef.current?.click()}
+            >
+              <IconPhotoOutline16 />
+              {t('chatInputAlbum')}
+            </button>
+            <button
+              type="button"
+              className={styles.panelAction}
+              disabled={importingHistory}
+              onClick={() => ensureApiKey() && fileInputRef.current?.click()}
+            >
+              <IconPaperclipOutline16 />
+              {t('chatInputFiles')}
+            </button>
+          </div>
+        </div>
+      ) : null}
       {dragging ? <DragMask /> : null}
-    </div>
+    </>
   )
 }
