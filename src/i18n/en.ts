@@ -131,7 +131,6 @@ export const en = {
   settingsAboutLicense: 'Open Source License',
   settingsAboutLicenseDescription: 'Modified from the official DeepSeek open-source project (MIT License)',
   settingsAboutThirdParty: 'Notices',
-  settingsAboutAiNotice: 'Content is AI-generated. Verify carefully and use legally.',
   back: 'Back',
   avatarMenuSettingsDialogThemeItemLabel: 'Theme',
   avatarMenuSettingsDialogThemeSelectLightOption: 'Light',
