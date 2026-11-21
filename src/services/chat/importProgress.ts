@@ -48,8 +48,8 @@ export const isImportRunning = (stage: ImportStage) =>
 
 /** 字节数转人类可读体积，用于下载进度副标题（38MB 的官方导出包需要让用户看到具体进度） */
 export const formatBytes = (bytes: number) => {
-  if (!Number.isFinite(bytes) || bytes <= 0) return '0 KB'
-  if (bytes >= 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`
-  if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+  if (!Number.isFinite(bytes) || bytes <= 0) {return '0 KB'}
+  if (bytes >= 1024 * 1024 * 1024) {return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`}
+  if (bytes >= 1024 * 1024) {return `${(bytes / 1024 / 1024).toFixed(1)} MB`}
   return `${Math.max(1, Math.round(bytes / 1024))} KB`
 }

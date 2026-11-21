@@ -60,26 +60,26 @@ const stampForFile = (at: number) => {
 
 /** 把任意值变成一行可读文本，对象走 JSON、异常带类型名 */
 const describe = (value: unknown, depth = 0): string => {
-  if (value === null) return 'null'
-  if (value === undefined) return 'undefined'
-  if (typeof value === 'string') return value
+  if (value === null) {return 'null'}
+  if (value === undefined) {return 'undefined'}
+  if (typeof value === 'string') {return value}
   if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') {
     return String(value)
   }
-  if (typeof value === 'function') return `[function ${value.name || 'anonymous'}]`
+  if (typeof value === 'function') {return `[function ${value.name || 'anonymous'}]`}
   if (value instanceof Error) {
     return value.stack && depth === 0 ? `${value.name}: ${value.message}\n${value.stack}` : `${value.name}: ${value.message}`
   }
   if (value instanceof Element) {
     return `<${value.tagName.toLowerCase()}${value.id ? `#${value.id}` : ''}>`
   }
-  if (depth > 2) return '…'
+  if (depth > 2) {return '…'}
   try {
     const json = JSON.stringify(
       value,
       (_key, item) => {
-        if (typeof item === 'bigint') return String(item)
-        if (item instanceof Error) return `${item.name}: ${item.message}`
+        if (typeof item === 'bigint') {return String(item)}
+        if (item instanceof Error) {return `${item.name}: ${item.message}`}
         return item
       },
       0
@@ -97,7 +97,7 @@ const joinParts = (parts: unknown[]) =>
     .slice(0, MAX_TEXT_LENGTH)
 
 const schedulePersist = () => {
-  if (persistTimer !== null) return
+  if (persistTimer !== null) {return}
   persistTimer = window.setTimeout(() => {
     persistTimer = null
     try {
@@ -110,7 +110,7 @@ const schedulePersist = () => {
 
 export const pushLog = (level: LogLevel, parts: unknown[]) => {
   const text = joinParts(parts)
-  if (!text) return
+  if (!text) {return}
   const at = Date.now()
   const last = entries[entries.length - 1]
   if (last && last.level === level && last.text === text && at - last.at < DEDUPE_WINDOW_MS) {
@@ -137,13 +137,13 @@ const sanitizeUrl = (url: string) => {
 const restorePersisted = () => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return
+    if (!raw) {return}
     const saved = JSON.parse(raw) as LogEntry[]
-    if (!Array.isArray(saved)) return
+    if (!Array.isArray(saved)) {return}
     const cutoff = Date.now() - RETENTION_MS
     for (const item of saved) {
-      if (!item || typeof item.at !== 'number' || typeof item.text !== 'string') continue
-      if (item.at < cutoff) continue
+      if (!item || typeof item.at !== 'number' || typeof item.text !== 'string') {continue}
+      if (item.at < cutoff) {continue}
       entries.push({ at: item.at, level: item.level ?? 'log', text: item.text, count: item.count })
     }
     entries.sort((a, b) => a.at - b.at)
@@ -224,7 +224,7 @@ const logEnvironment = () => {
 
 /** 幂等：重复调用只生效一次。应在应用入口尽早调用，才能抓到启动阶段的日志。 */
 export const installDiagnostics = () => {
-  if (installed) return
+  if (installed) {return}
   installed = true
   restorePersisted()
   hookConsole()
