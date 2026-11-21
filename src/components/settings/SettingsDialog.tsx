@@ -1156,11 +1156,11 @@ const AUTHOR_URL = 'https://github.com/mist-rill'
 const THIRD_PARTY_URL = `${REPO_URL}/blob/main/THIRD-PARTY-NOTICES.md`
 const LATEST_RELEASE_URL = 'https://api.github.com/repos/mist-rill/DeepSeek-Chat/releases/latest'
 
-/** 当前构建对应的 Release APK 资产名：正文表格按 APK 名标出 (code N) */
+/** 当前构建对应的 Release APK 资产前缀：资产名带版本号（如 DeepSeek-Chat-v1.22.apk），按前缀匹配 */
 const APK_BY_PACKAGE: Record<string, string> = {
-  'com.deepseek.chatdemo': 'DeepSeek-Chat-v1.apk',
-  'com.deepseek.chatdemo.custom': 'DeepSeek-Chat-CustomApi-v1.apk',
-  'com.deepseek.chatcute': 'DeepSeek-Cute-v2.apk',
+  'com.deepseek.chatdemo': 'DeepSeek-Chat-',
+  'com.deepseek.chatdemo.custom': 'DeepSeek-Chat-CustomApi-',
+  'com.deepseek.chatcute': 'DeepSeek-Cute-',
 }
 
 /** 原生端同窗口跳外部链接会被 Capacitor 拦截并交给系统浏览器打开；网页端开新窗口 */
@@ -1179,8 +1179,8 @@ type UpdateStatus =
   | { kind: 'available'; version: string; url: string }
   | { kind: 'failed' }
 
-/** 用 Release 正文表格里「| APK名 | vX.Y (code N) |」的 code 与本地 versionCode 比较 */
-const checkForUpdate = async (apkName: string, localCode: number): Promise<UpdateStatus> => {
+/** 用 Release 正文表格里「| APK文件名 | vX.Y (code N) |」的 code 与本地 versionCode 比较 */
+const checkForUpdate = async (apkPrefix: string, localCode: number): Promise<UpdateStatus> => {
   const response = await fetch(LATEST_RELEASE_URL, {
     headers: { Accept: 'application/vnd.github+json' },
   })
@@ -1191,10 +1191,12 @@ const checkForUpdate = async (apkName: string, localCode: number): Promise<Updat
     body?: string
     assets?: { name: string; browser_download_url: string }[]
   }
-  const asset = release.assets?.find((item) => item.name === apkName)
+  const asset = release.assets?.find(
+    (item) => item.name.startsWith(apkPrefix) && item.name.endsWith('.apk')
+  )
   const row = (release.body ?? '')
     .split('\n')
-    .find((line) => line.includes(apkName))
+    .find((line) => asset && line.includes(asset.name))
   const match = row?.match(/\|\s*v(\d+(?:\.\d+)*)\s*\(code (\d+)\)/)
   if (!asset || !match) {
     return { kind: 'failed' }
@@ -1218,17 +1220,17 @@ const AboutSetting = () => {
     void App.getInfo().then(setInfo)
   }, [])
 
-  const apkName = info ? APK_BY_PACKAGE[info.id] : undefined
+  const apkPrefix = info ? APK_BY_PACKAGE[info.id] : undefined
   const checking = status.kind === 'checking'
   const available = status.kind === 'available'
 
   const onCheck = async () => {
-    if (!info || !apkName || checking) {
+    if (!info || !apkPrefix || checking) {
       return
     }
     setStatus({ kind: 'checking' })
     try {
-      setStatus(await checkForUpdate(apkName, Number(info.build)))
+      setStatus(await checkForUpdate(apkPrefix, Number(info.build)))
     } catch {
       setStatus({ kind: 'failed' })
     }
@@ -1266,7 +1268,7 @@ const AboutSetting = () => {
             variant={available ? 'primary' : 'outlined'}
             size="m"
             className={styles.cellButton}
-            disabled={checking || (!available && !apkName)}
+            disabled={checking || (!available && !apkPrefix)}
             onClick={() =>
               available ? openExternal(status.url) : void onCheck()
             }
