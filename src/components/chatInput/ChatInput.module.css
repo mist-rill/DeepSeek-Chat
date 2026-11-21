@@ -356,6 +356,7 @@
 /* 添加面板：输入卡片下方的独立圆角卡片，拍照 / 相册 / 文件三等分 */
 /* 面板外层：高度折叠 + 上滑 + 淡入淡出，展开与收起都有动画 */
 .panelWrapper {
+  width: 100%;
   max-height: 0;
   opacity: 0;
   overflow: hidden;
