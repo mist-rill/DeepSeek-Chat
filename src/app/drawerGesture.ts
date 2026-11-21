@@ -32,6 +32,8 @@ export const bindDrawerGesture = (frame: HTMLElement) => {
   const drawer = frame.querySelector<HTMLElement>('[data-drawer]')
   // 暗化层在 frame 层：连卡片圆角外露出的底衬一起变暗，避免角外留一圈亮色
   const dim = frame.querySelector<HTMLElement>('[data-drawer-dim]')
+  // 白纱层在卡片内：抽屉打开时聊天界面渐渐变白（对齐官方 App）
+  const veil = main?.querySelector<HTMLElement>('[data-drawer-veil]')
   if (!main || !drawer) {
     return () => {}
   }
@@ -79,6 +81,10 @@ export const bindDrawerGesture = (frame: HTMLElement) => {
       if (dim) {
         dim.style.opacity = ((1 - progress) * 0.28).toFixed(3)
       }
+      // 白纱随展开渐显：最重 0.82，内容只剩隐约轮廓
+      if (veil) {
+        veil.style.opacity = (progress * 0.82).toFixed(3)
+      }
     }
   }
 
@@ -95,6 +101,9 @@ export const bindDrawerGesture = (frame: HTMLElement) => {
     drawer.style.transform = ''
     if (dim) {
       dim.style.opacity = ''
+    }
+    if (veil) {
+      veil.style.opacity = ''
     }
   }
 
