@@ -261,6 +261,36 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
           </Tooltip>
         </div>
         <div className={styles.right}>
+          {/* 添加：点开旋转 45° 呈叉状，并展开「拍照 / 相册 / 文件」面板 */}
+          <Tooltip content={t('chatInputAdd')}>
+            <button
+              type="button"
+              className={clsx(styles.addButton, panelOpen && styles.addButtonOpen)}
+              aria-label={t('chatInputAdd')}
+              aria-expanded={panelOpen}
+              disabled={importingHistory}
+              onClick={() => {
+                if (!panelOpen) {
+                  textareaRef.current?.blur()
+                  setKeyboardOpen(false)
+                }
+                setPanelOpen(!panelOpen)
+              }}
+            >
+              <IconPlusOutline16 />
+            </button>
+          </Tooltip>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            hidden
+            accept={ACCEPT}
+            onChange={(event) => {
+              acceptFiles(Array.from(event.target.files ?? []))
+              event.target.value = ''
+            }}
+          />
           {showVoice ? (
             <VoiceButton
               status={voice.status}
@@ -298,36 +328,6 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
               <IconSendOutline16 />
             </button>
           )}
-          {/* 添加：点开旋转 45° 呈叉状，并展开「拍照 / 相册 / 文件」面板 */}
-          <Tooltip content={t('chatInputAdd')}>
-            <button
-              type="button"
-              className={clsx(styles.addButton, panelOpen && styles.addButtonOpen)}
-              aria-label={t('chatInputAdd')}
-              aria-expanded={panelOpen}
-              disabled={importingHistory}
-              onClick={() => {
-                if (!panelOpen) {
-                  textareaRef.current?.blur()
-                  setKeyboardOpen(false)
-                }
-                setPanelOpen(!panelOpen)
-              }}
-            >
-              <IconPlusOutline16 />
-            </button>
-          </Tooltip>
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            hidden
-            accept={ACCEPT}
-            onChange={(event) => {
-              pickFiles(Array.from(event.target.files ?? []))
-              event.target.value = ''
-            }}
-          />
           <input
             ref={cameraInputRef}
             type="file"
