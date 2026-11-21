@@ -1390,7 +1390,6 @@ const AboutSetting = () => {
           </Button>
         }
       />
-      <div className={styles.promptNote}>{t('settingsAboutAiNotice')}</div>
     </>
   )
 }

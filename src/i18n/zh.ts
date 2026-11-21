@@ -127,7 +127,6 @@ export const zh = {
   settingsAboutLicense: '开源协议',
   settingsAboutLicenseDescription: '本应用基于 DeepSeek 官方开源项目 (MIT License) 修改',
   settingsAboutThirdParty: '第三方声明',
-  settingsAboutAiNotice: '内容由 AI 生成, 请仔细甄别, 并合法使用',
   back: '返回',
   avatarMenuSettingsDialogThemeItemLabel: '主题',
   avatarMenuSettingsDialogThemeSelectLightOption: '浅色',
