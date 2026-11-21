@@ -1,6 +1,6 @@
 .wrapper {
   --line-height: calc(24px * var(--fs-scale));
-  --input-padding-top: 12px;
+  --input-padding-top: 14px;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -9,7 +9,8 @@
   font-size: calc(16px * var(--fs-scale));
   line-height: var(--line-height);
   border-radius: 24px;
-  border: 1px solid var(--dsw-alias-border-l2-darkmode-thin);
+  /* 官方风格：极淡的色差线代替明显线框 */
+  border: 1px solid var(--dsw-alias-border-l1);
   background: var(--dsw-specific-input-major);
   overflow: hidden;
 }
@@ -197,6 +198,8 @@
 
   &::placeholder {
     color: var(--dsw-alias-label-caption);
+    /* 官方风格：占位灰字略粗 */
+    font-weight: 500;
     user-select: none;
   }
 }
@@ -264,13 +267,15 @@
   justify-content: center;
   gap: 4px;
   height: 34px;
+  min-width: calc(88px * var(--fs-scale));
   padding: 0 12px;
   border-radius: 18px;
-  border: 1px solid var(--dsw-alias-border-l2);
+  /* 官方风格：低对比色差线 */
+  border: 1px solid var(--dsw-alias-border-l1);
   background-color: transparent;
   color: var(--dsw-alias-label-primary);
   font: inherit;
-  font-size: 13px;
+  font-size: calc(12px * var(--fs-scale));
   line-height: 20px;
   font-weight: var(--fs-weight-mid, 500);
   white-space: nowrap;
@@ -375,7 +380,7 @@
   margin-top: 8px;
   padding: 12px;
   border-radius: 24px;
-  border: 1px solid var(--dsw-alias-border-l2-darkmode-thin);
+  border: 1px solid var(--dsw-alias-border-l1);
   background: var(--dsw-specific-input-major);
   cursor: default;
 }
