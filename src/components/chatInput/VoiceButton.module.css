@@ -16,6 +16,7 @@
   }
 }
 
+/* 空闲态与官方一致：圆形描边；录音态由光圈/实心圆接管 */
 .button {
   display: inline-flex;
   align-items: center;
@@ -24,7 +25,7 @@
   width: 34px;
   height: 34px;
   padding: 0;
-  border: none;
+  border: 1px solid var(--dsw-alias-border-l2);
   border-radius: 50%;
   background-color: transparent;
   color: var(--dsw-alias-label-primary);
@@ -45,6 +46,12 @@
   &:focus-visible {
     box-shadow: 0 0 0 2px var(--dsw-alias-button-primary-fill);
   }
+}
+
+/* 录音与转写态去掉描边，避免与光圈叠加 */
+.recording,
+.button:has(.loading) {
+  border-color: transparent;
 }
 
 .disabled {
